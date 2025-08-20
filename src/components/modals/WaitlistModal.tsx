@@ -56,8 +56,21 @@ export const WaitlistModal = ({ isOpen, onClose }: WaitlistModalProps) => {
 			})
 
 			if (!result.success) {
-				const code = (result as any)?.error?.code
-				const message = (result as any)?.error?.message
+				const err = result.error as unknown
+				const code = (() => {
+					if (typeof err === 'object' && err !== null && 'code' in err) {
+						const c = (err as Record<string, unknown>).code
+						return typeof c === 'string' || typeof c === 'number' ? String(c) : undefined
+					}
+					return undefined
+				})()
+				const message = (() => {
+					if (typeof err === 'object' && err !== null && 'message' in err) {
+						const m = (err as Record<string, unknown>).message
+						return typeof m === 'string' ? m : undefined
+					}
+					return undefined
+				})()
 				if (code === '23505') {
 					setSubmitError('Este email ya está registrado. Gracias por tu interés.')
 				} else {
@@ -67,8 +80,12 @@ export const WaitlistModal = ({ isOpen, onClose }: WaitlistModalProps) => {
 			}
 
 			onClose()
-		} catch (err: any) {
-			const message = err?.message || 'Ocurrió un error inesperado. Intenta de nuevo más tarde.'
+		} catch (unknownErr) {
+			let message = 'Ocurrió un error inesperado. Intenta de nuevo más tarde.'
+			if (typeof unknownErr === 'object' && unknownErr !== null && 'message' in unknownErr) {
+				const m = (unknownErr as Record<string, unknown>).message
+				if (typeof m === 'string') message = m
+			}
 			setSubmitError(message)
 		} finally {
 			setIsSubmitting(false)

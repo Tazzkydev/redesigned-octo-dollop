@@ -18,11 +18,7 @@ export async function createLandingLead(data: Omit<LandingLead, 'id' | 'created_
       .insert([data])
 
     if (error) {
-      const normalized = {
-        code: (error as any)?.code ?? (error as any)?.status ?? 'unknown',
-        message: (error as any)?.message ?? 'Unknown error',
-        details: (error as any)?.details ?? null
-      }
+      const normalized = normalizeSupabaseError(error)
       console.error('Error creating landing lead:', normalized)
       throw normalized
     }
@@ -65,11 +61,7 @@ export async function createProfessionalApplication(data: Omit<ProfessionalAppli
       .insert([data])
 
     if (error) {
-      const normalized = {
-        code: (error as any)?.code ?? (error as any)?.status ?? 'unknown',
-        message: (error as any)?.message ?? 'Unknown error',
-        details: (error as any)?.details ?? null
-      }
+      const normalized = normalizeSupabaseError(error)
       console.error('Error creating professional application:', normalized)
       throw normalized
     }
@@ -79,6 +71,18 @@ export async function createProfessionalApplication(data: Omit<ProfessionalAppli
     console.error('Error in createProfessionalApplication:', error)
     return { success: false, error }
   }
+}
+
+function normalizeSupabaseError(error: unknown): { code?: string; message?: string; details?: string | null } {
+  if (typeof error === 'object' && error !== null) {
+    const obj = error as Record<string, unknown>
+    const codeVal = obj.code ?? obj.status
+    const code = typeof codeVal === 'string' || typeof codeVal === 'number' ? String(codeVal) : undefined
+    const message = typeof obj.message === 'string' ? obj.message : undefined
+    const details = typeof obj.details === 'string' ? obj.details : null
+    return { code, message, details }
+  }
+  return { code: 'unknown', message: 'Unknown error', details: null }
 }
 
 export async function getProfessionalApplications() {

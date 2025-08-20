@@ -22,7 +22,6 @@ export const RegistrationModal = ({ isOpen, onClose }: RegistrationModalProps) =
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -63,7 +62,14 @@ export const RegistrationModal = ({ isOpen, onClose }: RegistrationModalProps) =
       })
 
       if (!result.success) {
-        const code = (result as any)?.error?.code
+        const err = result.error as unknown
+        const code = (() => {
+          if (typeof err === 'object' && err !== null && 'code' in err) {
+            const c = (err as Record<string, unknown>).code
+            return typeof c === 'string' || typeof c === 'number' ? String(c) : undefined
+          }
+          return undefined
+        })()
         if (code === '23505') {
           setSubmitError('Este email ya está registrado. Gracias por tu interés.')
         } else {
@@ -72,9 +78,8 @@ export const RegistrationModal = ({ isOpen, onClose }: RegistrationModalProps) =
         return
       }
 
-      setSubmitSuccess(true)
       onClose()
-    } catch (err) {
+    } catch {
       setSubmitError('Ocurrió un error inesperado. Intenta de nuevo más tarde.')
     } finally {
       setIsSubmitting(false)
